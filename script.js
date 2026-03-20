@@ -40,10 +40,22 @@ function scrollToTarget(selector) {
   target.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-window.addEventListener("scroll", () => {
-  updateProgress();
-  updateActiveSection();
-});
+(() => {
+  let ticking = false;
+  window.addEventListener("scroll", () => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        try {
+          updateProgress();
+          updateActiveSection();
+        } finally {
+          ticking = false;
+        }
+      });
+      ticking = true;
+    }
+  });
+})();
 
 window.addEventListener("load", () => {
   updateProgress();
