@@ -1,3 +1,4 @@
+const MOBILE_BREAKPOINT = 720;
 ﻿const progressBar = document.getElementById("progressBar");
 const tocToggle = document.querySelector(".toc-toggle");
 const tocPanel = document.querySelector(".toc-panel");
@@ -48,7 +49,7 @@ window.addEventListener("scroll", () => {
 window.addEventListener("load", () => {
   updateProgress();
   updateActiveSection();
-  if (window.innerWidth <= 720 && tocPanel) {
+  if (window.innerWidth <= MOBILE_BREAKPOINT && tocPanel) {
     tocPanel.classList.remove("is-open");
   }
 });
@@ -57,7 +58,7 @@ tocToggle?.addEventListener("click", handleTocToggle);
 
 tocLinks.forEach((link) => {
   link.addEventListener("click", () => {
-    if (window.innerWidth <= 720 && tocPanel?.classList.contains("is-open")) {
+    if (window.innerWidth <= MOBILE_BREAKPOINT && tocPanel?.classList.contains("is-open")) {
       tocPanel.classList.remove("is-open");
       tocToggle?.setAttribute("aria-expanded", "false");
     }
@@ -75,7 +76,8 @@ const saveSuggestionButton = document.getElementById("saveSuggestion");
 const copySuggestionButton = document.getElementById("copySuggestion");
 const emailSuggestionButton = document.getElementById("emailSuggestion");
 const formStatus = document.getElementById("formStatus");
-const RELIA_SUGGESTION_EMAIL = "inserir-email@relia.pt";
+// TODO: Replace with official project email from configuration or environment variable
+const RELIA_SUGGESTION_EMAIL = "[EMAIL_OFFICIAL]";
 const SUGGESTION_STORAGE_KEY = "relia_manual_suggestion_draft";
 
 function getSuggestionPayload() {
