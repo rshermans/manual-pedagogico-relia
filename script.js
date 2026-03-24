@@ -9,6 +9,21 @@ if (typeof window !== 'undefined') {
   scrollButtons = [...document.querySelectorAll("[data-scroll]")];
 }
 
+let chapterOffsets = [];
+
+function cacheChapterOffsets() {
+  const tocIds = new Set(tocLinks.map((link) => link.getAttribute("href").substring(1)));
+  chapterOffsets = chapters
+    .filter((chapter) => tocIds.has(chapter.id))
+    .map((chapter) => ({
+      id: chapter.id,
+      offsetTop: chapter.offsetTop,
+    }));
+}
+
+// Initial cache population
+cacheChapterOffsets();
+
 function updateProgress() {
   const scrollable = (document.documentElement ? document.documentElement.scrollHeight : 0) - window.innerHeight;
   const progress = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0;
@@ -95,15 +110,19 @@ if (typeof window !== 'undefined') {
 const RELIA_SUGGESTION_EMAIL = "inserir-email@relia.pt";
 const SUGGESTION_STORAGE_KEY = "relia_manual_suggestion_draft";
 
+function getCleanField(formData, key) {
+  return (formData.get(key) || "").toString().trim();
+}
+
 function getSuggestionPayload() {
   if (!suggestionForm) return null;
   const data = new FormData(suggestionForm);
   return {
-    name: (data.get("name") || "").toString().trim(),
-    email: (data.get("email") || "").toString().trim(),
-    chapter: (data.get("chapter") || "").toString().trim(),
-    type: (data.get("type") || "").toString().trim(),
-    message: (data.get("message") || "").toString().trim(),
+    name: getCleanField(data, "name"),
+    email: getCleanField(data, "email"),
+    chapter: getCleanField(data, "chapter"),
+    type: getCleanField(data, "type"),
+    message: getCleanField(data, "message"),
   };
 }
 
