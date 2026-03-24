@@ -1,9 +1,25 @@
+const MOBILE_BREAKPOINT = 720;
 ﻿const progressBar = document.getElementById("progressBar");
 const tocToggle = document.querySelector(".toc-toggle");
 const tocPanel = document.querySelector(".toc-panel");
 const tocLinks = [...document.querySelectorAll(".toc a[href^=\"#\"]")];
 const chapters = [...document.querySelectorAll(".chapter")];
 const scrollButtons = [...document.querySelectorAll("[data-scroll]")];
+
+let chapterOffsets = [];
+
+function cacheChapterOffsets() {
+  const tocIds = new Set(tocLinks.map((link) => link.getAttribute("href").substring(1)));
+  chapterOffsets = chapters
+    .filter((chapter) => tocIds.has(chapter.id))
+    .map((chapter) => ({
+      id: chapter.id,
+      offsetTop: chapter.offsetTop,
+    }));
+}
+
+// Initial cache population
+cacheChapterOffsets();
 
 function updateProgress() {
   const scrollable = document.documentElement.scrollHeight - window.innerHeight;
@@ -13,9 +29,9 @@ function updateProgress() {
 
 function updateActiveSection() {
   const offset = window.scrollY + window.innerHeight * 0.25;
-  let activeId = chapters[0]?.id;
+  let activeId = chapterOffsets[0]?.id;
 
-  for (const chapter of chapters) {
+  for (const chapter of chapterOffsets) {
     if (chapter.offsetTop <= offset) {
       activeId = chapter.id;
     }
@@ -46,18 +62,24 @@ window.addEventListener("scroll", () => {
 });
 
 window.addEventListener("load", () => {
+  cacheChapterOffsets();
   updateProgress();
   updateActiveSection();
-  if (window.innerWidth <= 720 && tocPanel) {
+  if (window.innerWidth <= MOBILE_BREAKPOINT && tocPanel) {
     tocPanel.classList.remove("is-open");
   }
+});
+
+window.addEventListener("resize", () => {
+  cacheChapterOffsets();
+  updateActiveSection();
 });
 
 tocToggle?.addEventListener("click", handleTocToggle);
 
 tocLinks.forEach((link) => {
   link.addEventListener("click", () => {
-    if (window.innerWidth <= 720 && tocPanel?.classList.contains("is-open")) {
+    if (window.innerWidth <= MOBILE_BREAKPOINT && tocPanel?.classList.contains("is-open")) {
       tocPanel.classList.remove("is-open");
       tocToggle?.setAttribute("aria-expanded", "false");
     }
@@ -75,7 +97,8 @@ const saveSuggestionButton = document.getElementById("saveSuggestion");
 const copySuggestionButton = document.getElementById("copySuggestion");
 const emailSuggestionButton = document.getElementById("emailSuggestion");
 const formStatus = document.getElementById("formStatus");
-const RELIA_SUGGESTION_EMAIL = "inserir-email@relia.pt";
+// TODO: Replace with official project email from configuration or environment variable
+const RELIA_SUGGESTION_EMAIL = "[EMAIL_OFFICIAL]";
 const SUGGESTION_STORAGE_KEY = "relia_manual_suggestion_draft";
 
 function getSuggestionPayload() {
@@ -162,3 +185,19 @@ copySuggestionButton?.addEventListener("click", () => {
 });
 emailSuggestionButton?.addEventListener("click", emailSuggestion);
 
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    handleTocToggle,
+    updateProgress,
+    updateActiveSection,
+    scrollToTarget,
+    getSuggestionPayload,
+    formatSuggestion,
+    setFormStatus,
+    saveSuggestionDraft,
+    loadSuggestionDraft,
+    copySuggestion,
+    emailSuggestion
+  };
+}
