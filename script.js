@@ -5,6 +5,21 @@ const tocLinks = [...document.querySelectorAll(".toc a[href^=\"#\"]")];
 const chapters = [...document.querySelectorAll(".chapter")];
 const scrollButtons = [...document.querySelectorAll("[data-scroll]")];
 
+let chapterOffsets = [];
+
+function cacheChapterOffsets() {
+  const tocIds = new Set(tocLinks.map((link) => link.getAttribute("href").substring(1)));
+  chapterOffsets = chapters
+    .filter((chapter) => tocIds.has(chapter.id))
+    .map((chapter) => ({
+      id: chapter.id,
+      offsetTop: chapter.offsetTop,
+    }));
+}
+
+// Initial cache population
+cacheChapterOffsets();
+
 function updateProgress() {
   const scrollable = document.documentElement.scrollHeight - window.innerHeight;
   const progress = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0;
@@ -13,9 +28,9 @@ function updateProgress() {
 
 function updateActiveSection() {
   const offset = window.scrollY + window.innerHeight * 0.25;
-  let activeId = chapters[0]?.id;
+  let activeId = chapterOffsets[0]?.id;
 
-  for (const chapter of chapters) {
+  for (const chapter of chapterOffsets) {
     if (chapter.offsetTop <= offset) {
       activeId = chapter.id;
     }
@@ -46,11 +61,17 @@ window.addEventListener("scroll", () => {
 });
 
 window.addEventListener("load", () => {
+  cacheChapterOffsets();
   updateProgress();
   updateActiveSection();
   if (window.innerWidth <= 720 && tocPanel) {
     tocPanel.classList.remove("is-open");
   }
+});
+
+window.addEventListener("resize", () => {
+  cacheChapterOffsets();
+  updateActiveSection();
 });
 
 tocToggle?.addEventListener("click", handleTocToggle);
