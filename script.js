@@ -162,3 +162,19 @@ copySuggestionButton?.addEventListener("click", () => {
 });
 emailSuggestionButton?.addEventListener("click", emailSuggestion);
 
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    handleTocToggle,
+    updateProgress,
+    updateActiveSection,
+    scrollToTarget,
+    getSuggestionPayload,
+    formatSuggestion,
+    setFormStatus,
+    saveSuggestionDraft,
+    loadSuggestionDraft,
+    copySuggestion,
+    emailSuggestion
+  };
+}
