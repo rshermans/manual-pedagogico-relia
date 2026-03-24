@@ -96,7 +96,8 @@ const saveSuggestionButton = document.getElementById("saveSuggestion");
 const copySuggestionButton = document.getElementById("copySuggestion");
 const emailSuggestionButton = document.getElementById("emailSuggestion");
 const formStatus = document.getElementById("formStatus");
-const RELIA_SUGGESTION_EMAIL = "inserir-email@relia.pt";
+// TODO: Replace with official project email from configuration or environment variable
+const RELIA_SUGGESTION_EMAIL = "[EMAIL_OFFICIAL]";
 const SUGGESTION_STORAGE_KEY = "relia_manual_suggestion_draft";
 
 function getSuggestionPayload() {
