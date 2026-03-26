@@ -75,7 +75,7 @@ const saveSuggestionButton = document.getElementById("saveSuggestion");
 const copySuggestionButton = document.getElementById("copySuggestion");
 const emailSuggestionButton = document.getElementById("emailSuggestion");
 const formStatus = document.getElementById("formStatus");
-const RELIA_SUGGESTION_EMAIL = "inserir-email@relia.pt";
+
 const SUGGESTION_STORAGE_KEY = "relia_manual_suggestion_draft";
 
 function getSuggestionPayload() {
@@ -141,13 +141,32 @@ async function copySuggestion() {
   setFormStatus("Contributo copiado para a area de transferencia.");
 }
 
-function emailSuggestion() {
+async function submitSuggestion() {
   const payload = getSuggestionPayload();
   if (!payload) return;
-  const subject = encodeURIComponent(`Contributo RELIA - ${payload.chapter || "Manual"}`);
-  const body = encodeURIComponent(formatSuggestion(payload));
-  window.location.href = `mailto:${RELIA_SUGGESTION_EMAIL}?subject=${subject}&body=${body}`;
-  setFormStatus("Cliente de email preparado. Atualize o endereco oficial no script se necessario.");
+
+  setFormStatus("A enviar o seu contributo...");
+
+  try {
+    const formData = new FormData(suggestionForm);
+    formData.append("form-name", "suggestions");
+
+    const response = await fetch("/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(formData).toString(),
+    });
+
+    if (response.ok) {
+      setFormStatus("Obrigado! O seu contributo foi enviado com sucesso.");
+      suggestionForm.reset();
+      localStorage.removeItem(SUGGESTION_STORAGE_KEY);
+    } else {
+      throw new Error("Erro na submissão");
+    }
+  } catch (err) {
+    setFormStatus("Não foi possível enviar automaticamente. Use a opção de copiar.");
+  }
 }
 
 window.addEventListener("load", () => {
@@ -160,5 +179,5 @@ copySuggestionButton?.addEventListener("click", () => {
     setFormStatus("Nao foi possivel copiar automaticamente. Tente novamente.");
   });
 });
-emailSuggestionButton?.addEventListener("click", emailSuggestion);
+emailSuggestionButton?.addEventListener("click", submitSuggestion);
 
