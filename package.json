@@ -1,0 +1,25 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "Manual pedagógico para o projeto RELIA",
+  "main": "script.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rshermans/manual-pedagogico-relia.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/rshermans/manual-pedagogico-relia/issues"
+  },
+  "homepage": "https://github.com/rshermans/manual-pedagogico-relia#readme",
+  "devDependencies": {
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0"
+  }
+}
