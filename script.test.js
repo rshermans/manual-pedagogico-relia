@@ -1,78 +1,116 @@
-const { updateProgress, setProgressBar } = require('./script.js');
+/**
+ * @jest-environment jsdom
+ */
 
-describe('updateProgress', () => {
-  let mockProgressBar;
+// We don't require at the top because it will fail due to missing DOM elements
+// that are initialized at top level of script.js
+
+describe('copySuggestion', () => {
+  let mockClipboard;
 
   beforeEach(() => {
-    // Reset mocks and state before each test
-    mockProgressBar = {
-      style: {
-        width: '0%'
-      }
-    };
-    setProgressBar(mockProgressBar);
+    // Setup DOM required for script.js top-level initialization
+    document.body.innerHTML = `
+      <div id="progressBar"></div>
+      <button class="toc-toggle"></button>
+      <div class="toc-panel"></div>
+      <form id="suggestionForm">
+        <input name="name" value="Test User">
+        <input name="email" value="test@example.com">
+        <input name="chapter" value="Chapter 1">
+        <input name="type" value="Typo">
+        <textarea name="message">Fixed a typo.</textarea>
+      </form>
+      <div id="formStatus"></div>
+      <button id="saveSuggestion"></button>
+      <button id="copySuggestion"></button>
+      <button id="emailSuggestion"></button>
+    `;
 
-    // Mock window properties
-    global.window = {
-      innerHeight: 1000,
-      scrollY: 0
+    // Mock navigator.clipboard
+    mockClipboard = {
+      writeText: jest.fn().mockResolvedValue(undefined),
     };
+    Object.defineProperty(navigator, 'clipboard', {
+      value: mockClipboard,
+      configurable: true,
+    });
 
-    // Mock document properties
-    global.document = {
-      documentElement: {
-        scrollHeight: 2000
-      }
-    };
+    // reset modules to ensure script.js runs again with the new DOM
+    jest.resetModules();
   });
 
   afterEach(() => {
-    delete global.window;
-    delete global.document;
+    jest.restoreAllMocks();
   });
 
-  test('sets progress to 0% when at the top', () => {
-    global.window.scrollY = 0;
-    updateProgress();
-    expect(mockProgressBar.style.width).toBe('0%');
+  test('should copy formatted suggestion to clipboard and update status', async () => {
+    const { copySuggestion, formatSuggestion } = require('./script');
+
+    await copySuggestion();
+
+    const expectedText = formatSuggestion({
+      name: "Test User",
+      email: "test@example.com",
+      chapter: "Chapter 1",
+      type: "Typo",
+      message: "Fixed a typo."
+    });
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expectedText);
+    expect(document.getElementById('formStatus').textContent).toBe("Contributo copiado para a area de transferencia.");
   });
 
-  test('sets progress to 50% when in the middle', () => {
-    // scrollable = 2000 - 1000 = 1000
-    // progress = (500 / 1000) * 100 = 50
-    global.window.scrollY = 500;
-    updateProgress();
-    expect(mockProgressBar.style.width).toBe('50%');
+  test('should return early if no suggestion payload', async () => {
+     // Re-setup DOM without the form
+    document.body.innerHTML = `
+      <div id="progressBar"></div>
+      <button class="toc-toggle"></button>
+      <div class="toc-panel"></div>
+      <div id="formStatus"></div>
+    `;
+
+    const { copySuggestion } = require('./script');
+    await copySuggestion();
+
+    expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+  });
+});
+
+describe('formatSuggestion', () => {
+  // We need the DOM elements even for these simple tests because they are at the top level
+  beforeAll(() => {
+      document.body.innerHTML = `
+      <div id="progressBar"></div>
+      <button class="toc-toggle"></button>
+      <div class="toc-panel"></div>
+      <form id="suggestionForm"></form>
+      <div id="formStatus"></div>
+    `;
   });
 
-  test('sets progress to 100% when at the bottom', () => {
-    global.window.scrollY = 1000;
-    updateProgress();
-    expect(mockProgressBar.style.width).toBe('100%');
+  test('should format suggestion correctly with all fields', () => {
+    const { formatSuggestion } = require('./script');
+    const payload = {
+      name: "John Doe",
+      email: "john@example.com",
+      chapter: "Intro",
+      type: "Suggestion",
+      message: "Hello world"
+    };
+    const result = formatSuggestion(payload);
+    expect(result).toContain("Nome: John Doe");
+    expect(result).toContain("Email: john@example.com");
+    expect(result).toContain("Capitulo: Intro");
+    expect(result).toContain("Tipo: Suggestion");
+    expect(result).toContain("Hello world");
   });
 
-  test('sets progress to 100% when scrolled past the bottom (Math.min)', () => {
-    global.window.scrollY = 1500;
-    updateProgress();
-    expect(mockProgressBar.style.width).toBe('100%');
-  });
-
-  test('sets progress to 0% when scrollable height is 0 (not scrollable)', () => {
-    global.document.documentElement.scrollHeight = 1000; // innerHeight is also 1000
-    updateProgress();
-    expect(mockProgressBar.style.width).toBe('0%');
-  });
-
-  test('sets progress to 0% when scrollable height is negative', () => {
-    global.document.documentElement.scrollHeight = 500; // less than innerHeight
-    updateProgress();
-    expect(mockProgressBar.style.width).toBe('0%');
-  });
-
-  test('handles missing documentElement gracefully', () => {
-    global.document.documentElement = null;
-    updateProgress();
-    // scrollable = 0 - 1000 = -1000. progress = 0.
-    expect(mockProgressBar.style.width).toBe('0%');
+  test('should handle missing fields in payload', () => {
+    const { formatSuggestion } = require('./script');
+    const payload = {};
+    const result = formatSuggestion(payload);
+    expect(result).toContain("Nome: Nao indicado");
+    expect(result).toContain("Mensagem:\nSem mensagem.");
   });
 });

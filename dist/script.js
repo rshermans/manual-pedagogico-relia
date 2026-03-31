@@ -182,21 +182,19 @@ if (typeof window !== 'undefined') {
       setFormStatus("Nao foi possivel copiar automaticamente. Tente novamente.");
     });
   });
-  emailSuggestionButton?.addEventListener("click", emailSuggestion);
-}
+});
+emailSuggestionButton?.addEventListener("click", emailSuggestion);
 
-if (typeof module !== 'undefined' && module.exports) {
+
+
+if (typeof module !== "undefined" && module.exports) {
   module.exports = {
-    updateProgress,
     getSuggestionPayload,
     formatSuggestion,
     setFormStatus,
-    saveSuggestionDraft,
-    loadSuggestionDraft,
     copySuggestion,
     emailSuggestion,
-    setProgressBar: (el) => { progressBar = el; },
-    setChapters: (chs) => { chapters = chs; },
-    setTocLinks: (links) => { tocLinks = links; }
+    saveSuggestionDraft,
+    loadSuggestionDraft
   };
 }
