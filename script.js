@@ -1,30 +1,55 @@
-﻿const progressBar = document.getElementById("progressBar");
-const tocToggle = document.querySelector(".toc-toggle");
-const tocPanel = document.querySelector(".toc-panel");
-const tocLinks = [...document.querySelectorAll(".toc a[href^=\"#\"]")];
-const chapters = [...document.querySelectorAll(".chapter")];
-const scrollButtons = [...document.querySelectorAll("[data-scroll]")];
+﻿let progressBar, tocToggle, tocPanel, tocLinks, chapters, scrollButtons;
+
+if (typeof window !== 'undefined') {
+  progressBar = document.getElementById("progressBar");
+  tocToggle = document.querySelector(".toc-toggle");
+  tocPanel = document.querySelector(".toc-panel");
+  tocLinks = [...document.querySelectorAll(".toc a[href^=\"#\"]")];
+  chapters = [...document.querySelectorAll(".chapter")];
+  scrollButtons = [...document.querySelectorAll("[data-scroll]")];
+}
+
+let chapterOffsets = [];
+
+function cacheChapterOffsets() {
+  const tocIds = new Set(tocLinks.map((link) => link.getAttribute("href").substring(1)));
+  chapterOffsets = chapters
+    .filter((chapter) => tocIds.has(chapter.id))
+    .map((chapter) => ({
+      id: chapter.id,
+      offsetTop: chapter.offsetTop,
+    }));
+}
+
+// Initial cache population
+cacheChapterOffsets();
 
 function updateProgress() {
-  const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+  const scrollable = (document.documentElement ? document.documentElement.scrollHeight : 0) - window.innerHeight;
   const progress = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0;
-  progressBar.style.width = `${Math.min(progress, 100)}%`;
+  if (progressBar) {
+    progressBar.style.width = `${Math.min(progress, 100)}%`;
+  }
 }
 
 function updateActiveSection() {
   const offset = window.scrollY + window.innerHeight * 0.25;
-  let activeId = chapters[0]?.id;
+  let activeId = chapters && chapters[0]?.id;
 
-  for (const chapter of chapters) {
-    if (chapter.offsetTop <= offset) {
-      activeId = chapter.id;
+  if (chapters) {
+    for (const chapter of chapters) {
+      if (chapter.offsetTop <= offset) {
+        activeId = chapter.id;
+      }
     }
   }
 
-  tocLinks.forEach((link) => {
-    const isActive = link.getAttribute("href") === `#${activeId}`;
-    link.classList.toggle("is-active", isActive);
-  });
+  if (tocLinks) {
+    tocLinks.forEach((link) => {
+      const isActive = link.getAttribute("href") === `#${activeId}`;
+      link.classList.toggle("is-active", isActive);
+    });
+  }
 }
 
 function handleTocToggle() {
@@ -40,53 +65,64 @@ function scrollToTarget(selector) {
   target.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-window.addEventListener("scroll", () => {
-  updateProgress();
-  updateActiveSection();
-});
+if (typeof window !== 'undefined') {
+  window.addEventListener("scroll", () => {
+    updateProgress();
+    updateActiveSection();
+  });
 
-window.addEventListener("load", () => {
-  updateProgress();
-  updateActiveSection();
-  if (window.innerWidth <= 720 && tocPanel) {
-    tocPanel.classList.remove("is-open");
-  }
-});
-
-tocToggle?.addEventListener("click", handleTocToggle);
-
-tocLinks.forEach((link) => {
-  link.addEventListener("click", () => {
-    if (window.innerWidth <= 720 && tocPanel?.classList.contains("is-open")) {
+  window.addEventListener("load", () => {
+    updateProgress();
+    updateActiveSection();
+    if (window.innerWidth <= 720 && tocPanel) {
       tocPanel.classList.remove("is-open");
-      tocToggle?.setAttribute("aria-expanded", "false");
     }
   });
-});
 
-scrollButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    scrollToTarget(button.getAttribute("data-scroll"));
+  tocToggle?.addEventListener("click", handleTocToggle);
+
+  tocLinks?.forEach((link) => {
+    link.addEventListener("click", () => {
+      if (window.innerWidth <= 720 && tocPanel?.classList.contains("is-open")) {
+        tocPanel.classList.remove("is-open");
+        tocToggle?.setAttribute("aria-expanded", "false");
+      }
+    });
   });
-});
 
-const suggestionForm = document.getElementById("suggestionForm");
-const saveSuggestionButton = document.getElementById("saveSuggestion");
-const copySuggestionButton = document.getElementById("copySuggestion");
-const emailSuggestionButton = document.getElementById("emailSuggestion");
-const formStatus = document.getElementById("formStatus");
+  scrollButtons?.forEach((button) => {
+    button.addEventListener("click", () => {
+      scrollToTarget(button.getAttribute("data-scroll"));
+    });
+  });
+}
+
+let suggestionForm, saveSuggestionButton, copySuggestionButton, emailSuggestionButton, formStatus;
+
+if (typeof window !== 'undefined') {
+  suggestionForm = document.getElementById("suggestionForm");
+  saveSuggestionButton = document.getElementById("saveSuggestion");
+  copySuggestionButton = document.getElementById("copySuggestion");
+  emailSuggestionButton = document.getElementById("emailSuggestion");
+  formStatus = document.getElementById("formStatus");
+}
+
 const RELIA_SUGGESTION_EMAIL = "inserir-email@relia.pt";
 const SUGGESTION_STORAGE_KEY = "relia_manual_suggestion_draft";
+
+function getCleanField(formData, key) {
+  return (formData.get(key) || "").toString().trim();
+}
 
 function getSuggestionPayload() {
   if (!suggestionForm) return null;
   const data = new FormData(suggestionForm);
   return {
-    name: (data.get("name") || "").toString().trim(),
-    email: (data.get("email") || "").toString().trim(),
-    chapter: (data.get("chapter") || "").toString().trim(),
-    type: (data.get("type") || "").toString().trim(),
-    message: (data.get("message") || "").toString().trim(),
+    name: getCleanField(data, "name"),
+    email: getCleanField(data, "email"),
+    chapter: getCleanField(data, "chapter"),
+    type: getCleanField(data, "type"),
+    message: getCleanField(data, "message"),
   };
 }
 
@@ -150,14 +186,16 @@ function emailSuggestion() {
   setFormStatus("Cliente de email preparado. Atualize o endereco oficial no script se necessario.");
 }
 
-window.addEventListener("load", () => {
-  loadSuggestionDraft();
-});
+if (typeof window !== 'undefined') {
+  window.addEventListener("load", () => {
+    loadSuggestionDraft();
+  });
 
-saveSuggestionButton?.addEventListener("click", saveSuggestionDraft);
-copySuggestionButton?.addEventListener("click", () => {
-  copySuggestion().catch(() => {
-    setFormStatus("Nao foi possivel copiar automaticamente. Tente novamente.");
+  saveSuggestionButton?.addEventListener("click", saveSuggestionDraft);
+  copySuggestionButton?.addEventListener("click", () => {
+    copySuggestion().catch(() => {
+      setFormStatus("Nao foi possivel copiar automaticamente. Tente novamente.");
+    });
   });
 });
 emailSuggestionButton?.addEventListener("click", emailSuggestion);
